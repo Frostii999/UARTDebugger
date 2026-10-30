@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input'
 
 import { useSendStore } from '@/store/useSendStore'
 
-const { sendText, isFileSending } = useSendStore()
+const { sendText, isFileSending, sendType } = useSendStore()
 
 // 获取串口和蓝牙连接状态
 const serial = inject('serial')
@@ -44,8 +44,6 @@ const defaultQuickInputs = [
   { id: useId(), enabled: false, content: '01 02 03 04', remark: 'HEX测试数据', index: 4, delay: 1000, isHex: true, showRemarkEdit: false },
   { id: useId(), enabled: false, content: 'AT+CWJAP="SSID","PASSWORD"', remark: '连接WiFi网络', index: 5, delay: 1000, isHex: false, showRemarkEdit: false },
 ]
-
-console.log('useId:', defaultQuickInputs)
 
 // 使用本地存储保存快捷输入数据
 const quickInputs = useLocalStorage('quickInputs', defaultQuickInputs)
