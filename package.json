@@ -1,0 +1,108 @@
+{
+  "name": "uart-debugger",
+  "type": "module",
+  "version": "1.0.1",
+  "private": true,
+  "description": "Windows 串口调试工作台",
+  "author": "UART Debugger contributors",
+  "license": "MIT",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "analyze": "vite build --mode=analyze",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "desktop": "electron .",
+    "build:win": "npm run licenses && npm run build && install-electron && electron-builder --win portable --x64",
+    "licenses": "node scripts/collect-licenses.mjs"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^4.11.0",
+    "@antfu/ni": "^24.3.0",
+    "@playwright/test": "^1.56.0",
+    "@tailwindcss/vite": "^4.1.11",
+    "@tanstack/vue-table": "^8.21.3",
+    "@tanstack/vue-virtual": "^3.13.11",
+    "@types/node": "^22.15.3",
+    "@vee-validate/zod": "^4.15.1",
+    "@vitejs/plugin-vue": "^5.2.4",
+    "@vueuse/core": "^10.2.1",
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
+    "autoprefixer": "^10.4.14",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "dayjs": "^1.11.13",
+    "electron": "45.1.0",
+    "electron-builder": "26.18.0",
+    "eslint": "^9.23.0",
+    "eslint-plugin-format": "^1.0.1",
+    "fuse.js": "^7.1.0",
+    "jsdom": "^26.1.0",
+    "lint-staged": "^15.5.0",
+    "lucide-vue-next": "^0.523.0",
+    "nprogress": "^0.2.0",
+    "postcss": "^8.4.27",
+    "reka-ui": "^2.3.1",
+    "rollup-plugin-visualizer": "^5.14.0",
+    "simple-git-hooks": "^2.13.0",
+    "str2gbk": "^0.0.5",
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^4.1.11",
+    "terser": "^5.43.1",
+    "tw-animate-css": "^1.3.4",
+    "unplugin-auto-import": "^19.3.0",
+    "unplugin-vue-components": "^28.7.0",
+    "uplot": "^1.6.32",
+    "vee-validate": "^4.15.1",
+    "vite": "6.4.5",
+    "vitest": "^3.2.4",
+    "vue": "^3.3.4",
+    "vue-router": "^4.5.1",
+    "vue-sonner": "^2.0.1",
+    "vuedraggable": "^4.1.0",
+    "zod": "^3.25.67"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "npx lint-staged"
+  },
+  "lint-staged": {
+    "*": "eslint --fix"
+  },
+  "build": {
+    "appId": "local.uartdebugger.desktop",
+    "productName": "UART Debugger",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "LICENSE",
+      "THIRD_PARTY_LICENSES.txt",
+      "package.json"
+    ],
+    "asar": true,
+    "electronDist": "node_modules/electron/dist",
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "icon": "public/uart-icon.png",
+      "executableName": "UARTDebugger",
+      "signExecutable": false
+    },
+    "portable": {
+      "artifactName": "UARTDebugger-${version}-win-x64.exe"
+    },
+    "compression": "normal"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true,
+    "vue-demi@0.14.10": true,
+    "electron-winstaller@5.4.0": true,
+    "simple-git-hooks": false
+  }
+}

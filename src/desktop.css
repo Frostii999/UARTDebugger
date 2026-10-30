@@ -1,0 +1,299 @@
+/* UART Debugger's locally bundled desktop workbench theme. */
+:root {
+  --background: #ffffff;
+  --foreground: #202020;
+  --card: #ffffff;
+  --card-foreground: #202020;
+  --popover: #ffffff;
+  --popover-foreground: #202020;
+  --primary: #333333;
+  --primary-foreground: #ffffff;
+  --secondary: #ffffff;
+  --secondary-foreground: #333333;
+  --muted: #ffffff;
+  --muted-foreground: #737373;
+  --accent: #ffffff;
+  --accent-foreground: #202020;
+  --border: #d4d4d4;
+  --input: #ffffff;
+  --ring: #3b82f6;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #202020;
+  --radius: 0.6rem;
+}
+.dark {
+  --background: #101010;
+  --foreground: #ededed;
+  --card: #1b1b1b;
+  --card-foreground: #ededed;
+  --popover: #242424;
+  --popover-foreground: #ededed;
+  --primary: #dedede;
+  --primary-foreground: #171717;
+  --secondary: #262626;
+  --secondary-foreground: #ededed;
+  --muted: #222222;
+  --muted-foreground: #a3a3a3;
+  --accent: #303030;
+  --accent-foreground: #ededed;
+  --border: #3b3b3b;
+  --input: #242424;
+  --ring: #dedede;
+  --sidebar: #1b1b1b;
+  --sidebar-foreground: #ededed;
+}
+body {
+  margin: 0;
+  font-family: 'Segoe UI Variable', 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+}
+.uart-workspace {
+  width: 100%;
+  height: 100dvh;
+  padding: 12px;
+  gap: 12px;
+  background: var(--background);
+}
+.uart-main {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 6px 24px #00000010;
+}
+.uart-quick {
+  width: 330px;
+  min-width: 300px;
+  max-width: 360px;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.workbench-header {
+  height: 76px;
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 22px;
+  background: var(--sidebar);
+  border-bottom: 1px solid var(--border);
+}
+.workbench-brand {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font:
+    700 23px Consolas,
+    monospace;
+  letter-spacing: -3px;
+  padding-right: 3px;
+}
+.brand-mark span {
+  opacity: 0.6;
+}
+.workbench-brand strong {
+  font-size: 18px;
+  letter-spacing: 0.4px;
+}
+.workbench-brand strong span {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  letter-spacing: 2px;
+}
+.workbench-brand p {
+  margin: 3px 0 0;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--muted-foreground);
+}
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.local-badge {
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.local-badge i {
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  border-radius: 100%;
+}
+.connection-badge {
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--muted-foreground);
+}
+.connection-badge.active {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+.header-version {
+  color: var(--muted-foreground);
+  font-family: Consolas, monospace;
+}
+.uart-rail {
+  width: 76px;
+  min-width: 76px;
+  border-radius: 14px;
+  padding: 14px 7px;
+  background: var(--sidebar);
+  color: var(--muted-foreground);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+}
+.rail-emblem {
+  font:
+    700 16px Consolas,
+    monospace;
+  color: var(--foreground);
+  letter-spacing: 2px;
+  padding: 12px 0 21px;
+}
+.rail-button {
+  width: 61px;
+  min-height: 62px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.rail-button:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+.rail-button.selected {
+  background: var(--accent);
+  color: var(--foreground);
+  border: 1px solid var(--ring);
+}
+.rail-button svg {
+  width: 20px;
+  height: 20px;
+}
+.rail-spacer {
+  flex: 1;
+}
+.uart-main [data-slot='resizable-panel-group'] {
+  min-height: 0;
+}
+.uart-main textarea {
+  background: var(--background);
+  padding-top: 16px;
+  line-height: 1.65;
+}
+.uart-main textarea::placeholder {
+  color: var(--muted-foreground);
+  opacity: 0.65;
+}
+.uart-main [data-slot='button'] {
+  border-radius: 6px;
+  font-weight: 500;
+}
+.uart-status {
+  min-height: 30px;
+  height: 30px;
+  font-size: 11px;
+  border-top: 1px solid var(--border);
+}
+.chat-bubble {
+  border-radius: 8px;
+  box-shadow: none;
+  border: 1px solid var(--border);
+}
+.device-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 360px;
+  overflow: auto;
+}
+.device-option {
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--background);
+}
+.device-option:hover {
+  border-color: var(--primary);
+  background: var(--accent);
+}
+.device-option span {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+@media (max-width: 1100px) {
+  .uart-workspace {
+    padding: 6px;
+    gap: 6px;
+  }
+  .header-meta {
+    gap: 9px;
+  }
+  .header-version {
+    display: none;
+  }
+  .workbench-header {
+    padding: 0 16px;
+  }
+}
+
+:root {
+  color-scheme: light;
+  --destructive: #404040;
+  --destructive-foreground: #ffffff;
+  --chart-1: #b65e00;
+  --chart-2: #21824a;
+  --chart-3: #93458d;
+  --chart-4: #b73737;
+  --chart-5: #927109;
+}
+.dark {
+  color-scheme: dark;
+  --destructive: #404040;
+  --destructive-foreground: #ffffff;
+  --chart-1: #e5a156;
+  --chart-2: #72c797;
+  --chart-3: #ce8dc8;
+  --chart-4: #ed9999;
+  --chart-5: #d3bb70;
+}
+.uart-rail {
+  border: 1px solid var(--border);
+}
+input[data-slot='input'],
+[data-slot='select-trigger'] {
+  border-color: var(--border);
+}

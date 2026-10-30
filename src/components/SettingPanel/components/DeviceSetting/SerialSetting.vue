@@ -1,0 +1,325 @@
+<script setup>
+import { useTitle } from '@vueuse/core'
+import { Loader2, RefreshCw } from 'lucide-vue-next'
+import { computed, inject, ref, watch } from 'vue'
+import { toast } from 'vue-sonner'
+import { useDialog } from '@/components/Dialog'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { useRecordCache } from '@/composables/useRecordCache'
+import { useSerialStore } from '@/store/useSerialStore.js'
+import { useSettingStore } from '@/store/useSettingStore'
+import { getSerialBrowserSupportStatus, SERIAL_BROWSER_SUPPORT_REASONS } from '@/utils/browserSupport'
+
+const {
+  port,
+  closePort,
+  connected,
+  connecting,
+  disconnecting,
+  portName,
+  openPort,
+  reopenPort,
+  requestPort,
+  isSupported,
+} = inject('serial')
+const { baudRate, baudRateList, dataBits, stopBits, parity, flowControl, serialRate, defaultBaudRateList } = useSerialStore()
+const { open } = useDialog()
+const { createSession } = useRecordCache()
+const { recordCacheEnabled } = useSettingStore()
+const supportStatus = ref(getSerialBrowserSupportStatus())
+const serialUnsupported = computed(() => supportStatus.value.blocked)
+
+const serialSupportContent = computed(() => {
+  switch (supportStatus.value.reason) {
+    case SERIAL_BROWSER_SUPPORT_REASONS.MOBILE:
+      return {
+        title: '手机暂时不能连接串口',
+        description: 'Web Serial 主要支持桌面版 Chrome 或 Edge，请在电脑浏览器中打开。',
+      }
+    case SERIAL_BROWSER_SUPPORT_REASONS.INSECURE_CONTEXT:
+      return {
+        title: '当前网址无法连接串口',
+        description: 'Web Serial 需要 HTTPS 或 localhost 这类安全上下文，请确认线上地址使用有效 HTTPS 证书访问。',
+      }
+    case SERIAL_BROWSER_SUPPORT_REASONS.UNSUPPORTED_BROWSER:
+      return {
+        title: '当前浏览器未开放 Web Serial',
+        description: '请确认使用桌面版 Chrome 或 Edge，并检查浏览器策略、权限策略或实验功能是否禁用了 Serial。',
+      }
+    default:
+      return {
+        title: '串口功能暂不可用',
+        description: '请重新检测当前浏览器环境。',
+      }
+  }
+})
+
+const serialSupportDetails = computed(() => [
+  {
+    label: '协议',
+    value: supportStatus.value.location?.protocol || '未知',
+  },
+  {
+    label: '安全上下文',
+    value: supportStatus.value.isSecureContext ? '是' : '否',
+  },
+  {
+    label: 'Web Serial',
+    value: supportStatus.value.hasWebSerial ? '已开放' : '未开放',
+  },
+])
+
+function refreshSupportStatus() {
+  supportStatus.value = getSerialBrowserSupportStatus()
+}
+
+watch(isSupported, refreshSupportStatus)
+
+function serialOptions() {
+  return {
+    baudRate: Number.parseInt(baudRate.value),
+    dataBits: Number.parseInt(dataBits.value),
+    stopBits: Number.parseFloat(stopBits.value),
+    parity: parity.value,
+    flowControl: flowControl.value,
+  }
+}
+
+async function runSerialAction(action, message) {
+  try {
+    await action()
+  }
+  catch (error) {
+    console.error(message, error)
+    toast.error(`${message}：${error?.message || String(error)}`)
+  }
+}
+
+async function openSerialPort() {
+  await runSerialAction(() => openPort(serialOptions()), '串口连接失败')
+}
+
+async function closeSerialPort() {
+  await runSerialAction(() => closePort(), '串口未完全释放')
+}
+
+watch([baudRate, dataBits, stopBits, parity, flowControl], (_newPort) => {
+  if (!port.value || !connected.value)
+    return
+  runSerialAction(() => reopenPort(serialOptions()), '串口重连失败')
+})
+
+async function selectPort() {
+  const selectedPort = await requestPort()
+
+  if (!selectedPort) {
+    refreshSupportStatus()
+    return
+  }
+
+  if (recordCacheEnabled.value) {
+    // 如果启用了缓存，创建一个新缓存会话
+    const _sessionId = createSession()
+  }
+  await openSerialPort()
+}
+
+// 数据位列表
+const dataBitsList = [
+  8,
+  7,
+  6,
+  5,
+]
+
+// 校验位列表
+const parityList = {
+  none: 'None',
+  even: 'Even',
+  odd: 'Odd',
+}
+
+// 停止位列表
+const stopBitsList = [
+  1,
+  2,
+]
+
+const pageTitle = computed(() => {
+  let str = ''
+  if (portName.value) {
+    if (connecting.value) {
+      str = `${str} - 连接中...`
+    }
+    else if (disconnecting.value) {
+      str = `${str} - 断开中...`
+    }
+    else if (connected.value) {
+      str = `${str} - 已连接`
+    }
+    else {
+      str = `${portName.value} - ${str}`
+    }
+  }
+  else {
+    if (connecting.value) {
+      str = `串口连接中...`
+    }
+    else if (disconnecting.value) {
+      str = `串口断开中...`
+    }
+    else if (connected.value) {
+      str = `串口已连接`
+    }
+    else {
+      str = ``
+    }
+  }
+  return `${str} UART Debugger`
+})
+// 注入页面标题
+useTitle(pageTitle)
+</script>
+
+<template>
+  <div class="flex flex-col p-4">
+    <div class="flex flex-col gap-y-1.5 pb-4">
+      <h3 class="font-semibold leading-none tracking-tight">
+        {{ portName ?? "串口设置" }}
+      </h3>
+      <p class="text-muted-foreground">
+        请选择串口连接相关参数
+      </p>
+    </div>
+
+    <div class="flex flex-col space-y-3 pb-4">
+      <label for="baudRate" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">波特率</label>
+      <Select v-model="baudRate">
+        <SelectTrigger class="w-full">
+          <SelectValue placeholder="请选择波特率" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            <SelectItem v-for="item in baudRateList" :key="item" :value="item">
+              {{ item }}
+            </SelectItem>
+          </SelectGroup>
+          <SelectGroup>
+            <SelectLabel>
+              <Button variant="ghost" class="cursor-pointer" @click.stop="open('serialRate')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><!-- Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="M11 13H5v-2h6V5h2v6h6v2h-6v6h-2z" /></svg>
+                添加自定义
+              </Button>
+            </SelectLabel>
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      <label for="dataBits" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">数据位</label>
+      <Select v-model="dataBits">
+        <SelectTrigger class="w-full">
+          <SelectValue placeholder="请选择数据位" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            <SelectItem v-for="item in dataBitsList" :key="item" :value="item">
+              {{ item }}
+            </SelectItem>
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      <label for="parity" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">校验位</label>
+      <Select v-model="parity">
+        <SelectTrigger class="w-full">
+          <SelectValue placeholder="请选择校验位" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            <SelectItem v-for="item in Object.keys(parityList)" :key="item" :value="item">
+              {{ parityList[item] }}
+            </SelectItem>
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      <label for="stopBits" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">停止位</label>
+      <Select v-model="stopBits">
+        <SelectTrigger class="w-full">
+          <SelectValue placeholder="请选择停止位" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            <SelectItem v-for="item in stopBitsList" :key="item" :value="item">
+              {{ item }}
+            </SelectItem>
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    </div>
+
+    <Button
+      v-if="!connected"
+      class="cursor-pointer mb-3"
+      :disabled="serialUnsupported || connecting || disconnecting"
+      @click="selectPort"
+    >
+      <Loader2 v-if="connecting" class="w-4 h-4 mr-2 animate-spin" />
+      {{ connecting ? '连接中...' : (portName ? "重新选择" : "选择串口设备") }}
+    </Button>
+    <Button
+      v-if="connected"
+      class="cursor-pointer mb-3"
+      variant="destructive"
+      :disabled="connecting || disconnecting"
+      @click="closeSerialPort"
+    >
+      <Loader2 v-if="disconnecting" class="w-4 h-4 mr-2 animate-spin" />
+      {{ disconnecting ? '断开中...' : '断 开' }}
+    </Button>
+    <Button
+      v-if="!connected && port"
+      class="cursor-pointer mb-3"
+      variant="secondary"
+      :disabled="serialUnsupported || connecting || disconnecting"
+      @click="openSerialPort"
+    >
+      <Loader2 v-if="connecting" class="w-4 h-4 mr-2 animate-spin" />
+      {{ connecting ? '连接中...' : '重 连' }}
+    </Button>
+
+    <Alert v-if="serialUnsupported" class="mt-1">
+      <AlertTitle>{{ serialSupportContent.title }}</AlertTitle>
+      <AlertDescription class="space-y-3">
+        <p>
+          {{ serialSupportContent.description }}
+        </p>
+        <div class="grid gap-2 text-xs sm:grid-cols-3">
+          <div
+            v-for="item in serialSupportDetails"
+            :key="item.label"
+            class="rounded-md border px-2 py-1.5"
+          >
+            <p class="text-muted-foreground">
+              {{ item.label }}
+            </p>
+            <p class="mt-0.5 font-medium text-foreground">
+              {{ item.value }}
+            </p>
+          </div>
+        </div>
+        <Button size="sm" variant="outline" class="cursor-pointer" @click="refreshSupportStatus">
+          <RefreshCw class="size-3.5" />
+          重新检测
+        </Button>
+      </AlertDescription>
+    </Alert>
+  </div>
+</template>
