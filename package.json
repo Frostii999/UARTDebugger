@@ -12,6 +12,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "analyze": "vite build --mode=analyze",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "desktop": "electron .",
