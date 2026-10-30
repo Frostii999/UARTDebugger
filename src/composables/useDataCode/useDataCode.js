@@ -9,13 +9,10 @@ const gbkDecoder = new TextDecoder('gbk')
 const utf8Decoder = new TextDecoder()
 
 function hexStringToHexFormat(str) {
-  return (
-    `0x${
-      str
-        .match(/.{1,2}/g)
-        .map(i => i.toUpperCase())
-        .join(', 0x')}`
-  )
+  const groups = String(str).replace(/\s/g, '').match(/.{1,2}/g)
+  if (!groups)
+    return ''
+  return `0x${groups.map(i => i.toUpperCase()).join(', 0x')}`
 }
 
 function hexStringToBuffer(str) {
@@ -90,8 +87,13 @@ function stringToHtml(str) {
     .replaceAll('\r', '<br/>')
 }
 
+/**
+ * 判断字符串是否为合法的 HEX 数据（不含空白，且至少一个字符）
+ * @param {string} str 待判断的字符串
+ * @returns {boolean} 是否为合法 HEX
+ */
 export function isHexString(str) {
-  return true && str.match(/^[0-9a-f]+$/i)
+  return /^[0-9a-f]+$/i.test(String(str ?? ''))
 }
 export function useDataCode() {
   return {
