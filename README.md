@@ -60,4 +60,4 @@ scripts/      图标生成与许可证收集脚本
 
 ## 许可证
 
-本项目使用 MIT 许可证，详见 [LICENSE](LICENSE)。第三方依赖与内置字体的许可证见 `THIRD_PARTY_LICENSES.txt`（由 `npm run licenses` 生成）与 `public/fonts/`。
+本项目使用 MIT 许可证，详见 [LICENSE](LICENSE)。
