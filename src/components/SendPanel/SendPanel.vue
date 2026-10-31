@@ -103,7 +103,7 @@ function onKeydown(event) {
           <Button variant="ghost">
             {{
               checkAlgorithm
-                ? `${checkAlgorithm}(${checkDigitHexFormat})`
+                ? `${checkAlgorithm}${checkDigitHexFormat ? `(${checkDigitHexFormat})` : ""}`
                 : "校验位"
             }}
           </Button>

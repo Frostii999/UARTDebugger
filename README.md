@@ -33,8 +33,12 @@ npm run desktop   # 打开 Electron 窗口
 ```bash
 npm install
 npm run dev       # 浏览器调试（需 Chromium 内核，支持 Web Serial / Web Bluetooth）
-npm run lint
+npm run lint      # ESLint 静态检查
+npm test          # Vitest 单元测试
+npm run test:watch
 ```
+
+单元测试位于 `tests/unit/`，主要覆盖数据编码（HEX / 十进制 / ASCII）与校验位算法，提交前建议先跑一遍 `npm run lint && npm test`。仓库同时提供 GitHub Actions 工作流（`.github/workflows/ci.yml`），在 push 和 PR 时自动执行 lint、测试与构建。
 
 ## 打包
 
@@ -49,6 +53,7 @@ npm run build:win
 ```text
 electron/     Electron 主进程与预加载脚本
 src/          Vue 3 渲染进程（组件、页面、组合式函数、工具）
+tests/        Vitest 单元测试
 public/       图标与内置字体
 scripts/      图标生成与许可证收集脚本
 ```

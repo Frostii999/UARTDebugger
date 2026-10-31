@@ -22,14 +22,13 @@ export const useSendStore = createGlobalState(() => {
   const { sendHex: serialSendHex } = inject('serial')
   const { sendHex: bleSendHex } = inject('ble')
   const {
-    records,
     addRecord,
     getRecordPayload,
     getRecentWriteRecords,
     getRecentWriteRecordSummaries,
   } = useRecordStore()
   const { open: openDialog } = useDialog()
-  const { lineEnding, deviceType, sendHexInputMode } = useSettingStore()
+  const { lineEnding, deviceType } = useSettingStore()
   const { sendType } = useSerialStore()
   const { checkAlgorithm, checkAlgorithms } = useCheckDigit()
 
@@ -59,38 +58,41 @@ export const useSendStore = createGlobalState(() => {
     return sendData.value.length > 0 && !isAutoSending.value
   })
 
+  // 输入尚未构成完整字节（例如奇数字符）时返回 undefined，
+  // 保证校验位预览不会因为 computed 抛错而打断整个发送面板的渲染。
   const checkDigit = computed(() => {
     if (!checkAlgorithm.value || sendType.value !== 'hex')
       return undefined
-    if (sendData.value.length === 0)
-      return [0x00]
-    return checkAlgorithms.value.find(item => item.name === checkAlgorithm.value)?.algorithm(
-      hexStringToBuffer(sendData.value.replaceAll(' ', '')),
-    )
+    if (sendData.value.trim().length === 0)
+      return undefined
+    try {
+      const algorithm = checkAlgorithms.value.find(item => item.name === checkAlgorithm.value)
+      if (!algorithm)
+        return undefined
+      return algorithm.algorithm(hexStringToBuffer(sendData.value))
+    }
+    catch {
+      return undefined
+    }
   })
 
   const sendBuffer = computed(() => {
     if (sendType.value === 'hex') {
-      if (checkDigit.value) {
-        return Uint8Array.from([
-          ...hexStringToBuffer(sendData.value.replaceAll(' ', '')),
-          ...checkDigit.value,
-        ])
-      }
-      return hexStringToBuffer(sendData.value.replaceAll(' ', ''))
+      const bytes = hexStringToBuffer(sendData.value)
+      if (checkDigit.value?.length)
+        return Uint8Array.from([...bytes, ...checkDigit.value])
+      return bytes
     }
     else if (sendType.value === 'ascii') {
-      console.log('ascii', stringToBuffer(sendData.value + lineEnding.value))
       return stringToBuffer(sendData.value + lineEnding.value)
     }
     else {
-      console.log('dec', decStringToBuffer(sendData.value.replaceAll(' ', '')))
       return decStringToBuffer(sendData.value.replaceAll(' ', ''))
     }
   })
 
   const checkDigitHexFormat = computed(() => {
-    if (!checkAlgorithm.value)
+    if (!checkAlgorithm.value || !checkDigit.value?.length)
       return undefined
     return bufferToHexFormat(checkDigit.value)
   })
@@ -255,20 +257,15 @@ export const useSendStore = createGlobalState(() => {
   })
 
   const workerSendHistory = ref([])
-  const sendHistory = computed(() => {
-    if (getRecentWriteRecordSummaries || getRecentWriteRecords)
-      return workerSendHistory.value
-    return records.value.filter(item => item.type === 'write')
-  })
+  const sendHistory = computed(() => workerSendHistory.value)
 
   async function refreshSendHistory() {
     if (getRecentWriteRecordSummaries) {
       workerSendHistory.value = await getRecentWriteRecordSummaries(100)
       return
     }
-    if (!getRecentWriteRecords)
-      return
-    workerSendHistory.value = await getRecentWriteRecords(100)
+    if (getRecentWriteRecords)
+      workerSendHistory.value = await getRecentWriteRecords(100)
   }
 
   function onInput() {
@@ -281,8 +278,9 @@ export const useSendStore = createGlobalState(() => {
         .toUpperCase()
     }
     else if (sendType.value === 'dec') {
+      // 注意：需要 g 标志，否则只会过滤掉第一个非数字字符
       sendData.value = sendData.value
-        .replace(/(\D)/, '')
+        .replace(/\D/g, '')
     }
   }
 
@@ -313,27 +311,21 @@ export const useSendStore = createGlobalState(() => {
 
   if (saveKey) {
     watch(saveKey, (v) => {
-      if (v) {
-        console.log('Ctrl + S have been pressed')
+      if (v)
         reformat()
-      }
     })
   }
 
   if (up) {
     watch(up, (v) => {
-      if (v && document.activeElement?.id === 'send-panel-input') {
-        console.log('Up have been pressed')
+      if (v && document.activeElement?.id === 'send-panel-input')
         navigateHistory('up')
-      }
     })
   }
   if (down) {
     watch(down, (v) => {
-      if (v && document.activeElement?.id === 'send-panel-input') {
-        console.log('Down have been pressed')
+      if (v && document.activeElement?.id === 'send-panel-input')
         navigateHistory('down')
-      }
     })
   }
 
@@ -344,26 +336,22 @@ export const useSendStore = createGlobalState(() => {
   }
 
   function reformatHex() {
-    if (sendData.value.length === 0)
+    // 先按空白分割并去掉空字符串，纯空白输入直接忽略
+    const groups = sendData.value.split(' ').filter(item => item)
+    if (groups.length === 0)
       return
-    let data = sendData.value
-    // 首先使用空格分割 并去掉空字符串
-    data = data.split(' ').filter(item => item)
     // 在长度为奇数的字符串的最后一位前补0
-    data = data.map((item) => {
-      if (item.length % 2 === 1) {
-      // 最后一位前补0
-        return `${item.slice(0, item.length - 1)}0${item.slice(item.length - 1)}`
-      }
-      return item
-    })
-    // 将数组转换为字符串
-    data = data.join('')
-    // 将字符串按照每两个字符分割
-    data = data.match(/.{1,2}/g)
-    // 将数组转换为字符串
-    data = data.join(' ')
-    sendData.value = data
+    const normalized = groups
+      .map((item) => {
+        if (item.length % 2 === 1) {
+          // 最后一位前补0
+          return `${item.slice(0, item.length - 1)}0${item.slice(item.length - 1)}`
+        }
+        return item
+      })
+      .join('')
+    // 将字符串按照每两个字符分割（match 可能返回 null）
+    sendData.value = (normalized.match(/.{1,2}/g) ?? []).join(' ')
   }
 
   function createDraftSnapshot() {
@@ -457,10 +445,8 @@ export const useSendStore = createGlobalState(() => {
   }
 
   async function navigateHistory(direction) {
-    if (getRecentWriteRecordSummaries || getRecentWriteRecords)
-      await refreshSendHistory()
+    await refreshSendHistory()
     const history = sendHistory.value
-    console.log('History length:', history.length)
     if (history.length === 0)
       return
 
@@ -469,14 +455,9 @@ export const useSendStore = createGlobalState(() => {
       historyDraftSnapshot.value = createDraftSnapshot()
 
     if (direction === 'up') {
-      // 向上导航到更早的历史记录
-      if (historyIndex.value < history.length - 1) {
+      // 向上导航到更早的历史记录（historyIndex === -1 时会落到 0）
+      if (historyIndex.value < history.length - 1)
         historyIndex.value++
-      }
-      else if (historyIndex.value === -1) {
-        // 从当前输入状态开始，显示最新的历史记录
-        historyIndex.value = 0
-      }
     }
     else if (direction === 'down') {
       // 向下导航到更新的历史记录
@@ -489,8 +470,6 @@ export const useSendStore = createGlobalState(() => {
       }
     }
 
-    console.log('History index changed from', oldIndex, 'to', historyIndex.value)
-
     if (oldIndex === -1 && historyIndex.value === -1)
       return
 
@@ -500,7 +479,6 @@ export const useSendStore = createGlobalState(() => {
     }
     else {
       const record = history[history.length - 1 - historyIndex.value]
-      console.log('Selected record:', record)
       const pendingApply = applyHistoryRecord(record)
       if (pendingApply)
         await pendingApply
